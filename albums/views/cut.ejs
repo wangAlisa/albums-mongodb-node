@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="/css/reset.css">
+	<link rel="stylesheet" href="/css/header.css">
+	<style type="text/css"> 
+	  .show{
+	  	height:100px;
+	  	/*border:1px solid red;*/
+	  }
+	  .albums{ 
+	  }
+	  .area{
+	  	margin: 0 auto;
+	  	position: relative;
+	  }
+	  .show li{
+	  	float: left; 
+	  	width:25%;
+	  	height:100%;
+	  }
+	  .body ul {
+	  	overflow: hidden;
+
+	  }
+		.body ul li{
+			float: left;	
+			width:25%;
+			height:150px;
+			position: relative;
+		}
+		.body ul li span{
+			position: absolute;
+			width:100%;
+			height:20px;
+			line-height:  20px;
+			top:50%;
+			margin-top:-10px;
+			left:0;
+		}
+		.area .mengban {
+			position: absolute;
+			top:0;
+			left:0;
+			width:100%;
+			height:100%;
+			background: rgba(0,0,0,.3);
+		}
+		.area .mengban .cut{
+			position: absolute;
+			top:0;
+			left:0;
+			width:250px;
+			height:250px;
+			/*border:1px solid red;*/
+			background: url(<%=username%>/head_pic/head_pic.jpg) no-repeat;
+		}
+		.area .mengban .cut .btn{
+			position: absolute;
+			top:100%;
+			left:100%;
+			width:10px;
+			height:10px;
+			margin-left: -5px;
+			margin-top:-5px;
+			background: rgba(0,255,0,.4);
+		}
+		</style>
+</head>
+<body>
+	 <section class="header clear">
+	    	<div class="container clear">
+	    		<div class="logo clear">
+	    			<img src="/images/title.png" alt="">
+	    		</div>
+	    		<nav>
+	    			<ul>
+	    				<li><a href="/all_albums">所有相册</a></li>
+	    				<li><a href="/my_albums">我的相册</a></li>
+	    				<li><a href="/albums_manage">管理相册</a></li>
+	    			</ul>
+	    		</nav>
+	    		<div class="right clear">
+	    			<% if(hasLogin){%>
+	    			<div class="head_pic">
+	    				<a href="/cut"><img src="<%=username%>/head_pic/head_pic.jpg" alt=""></a>
+	    			</div>
+	    			<div class="username">
+	    				<%=username%>
+	    			</div>
+	    			<div class="exit"> 
+	    				<a href="/exit">退出</a>
+	    			</div>
+	    		 <%}else{%>
+	    		   <div class="login"><a href="/login.html">登录</a></div>
+	    		   <div class="regist"><a href="regist.html">注册</a></div>
+	    		 <%}%>
+	    		</div>
+	    	</div>
+	    </section>
+	    <section class="body">
+	    	<div class="container">
+	    		<div class="area">
+	    			<img src="<%=username%>/head_pic/head_pic.jpg" alt="">
+	    			<div class="mengban">
+	    				<div class="cut">
+	    					<div class="btn"></div>
+	    				</div>
+	    			</div>
+	    		</div>
+	    		<button id="crop">裁切</button>
+	    	</div>
+	    </section>
+	    <script type="text/javascript" src="js/jquery-1.7.2.js"></script>
+	    <script type="text/javascript">
+	     $(function(){
+	     	// 获取图片
+	      var area = $(".area");
+	      var img = area.find("img");
+	      var cut = area.find(".cut");
+	      var btn = cut.find(".btn");
+	      var crop = $("#crop");
+	      crop.click(function(){
+	      	$.ajax({
+	      		url:"/crop",
+	      		type:"get",
+	      		data:{
+	      			x:cut[0].offsetLeft,
+	      			y:cut[0].offsetTop,
+	      			width:cut.width(),
+	      			height:cut.height()
+	      		}
+	      	})
+	      })
+	      img.load(function(){
+	      	var width  = this.width;
+	      	var height = this.height;
+	      	area.css({width:width,height:height});
+	      }) 
+	      // 移动最小的那个小按钮的时候
+	      btn.mousedown(function(e){
+	      	e.preventDefault();
+	      	e.stopPropagation();
+	      	var x = e.clientX;
+	      	var y = e.clientY;
+	      	var width = cut.width();
+	      	console.log(width)
+	      	var height = cut.height();
+	      	document.onmousemove= function(e){
+	      		e.preventDefault();
+	      		e.stopPropagation();
+	      		var now_x = e.clientX;
+	      		var now_y = e.clientY;
+	      		console.log("x:"+(width-(x-now_x)));
+	      		cut.css({width:width-(x-now_x),height:height-(y-now_y)});
+	      		// console.log("y"+height - y - now_y);
+	      	}
+	      })
+	      document.onmouseup = function(){
+	      	document.onmousemove = null;
+	      	cut.off("mousemove")
+	      }
+	      cut.mousedown(function(e){
+	      	e.preventDefault();
+	      	e.stopPropagation();
+	      	// 先记住鼠标当前的视口位置 
+	      	var x = e.clientX;
+	      	var y = e.clientY;
+	      	// 记住当前的cut的定位值
+	      	var nowLeft = this.offsetLeft;
+	      	var nowTop = this.offsetTop;
+	      	cut.mousemove(function(e){
+	      		e.preventDefault();
+	      		e.stopPropagation();
+	      		var now_x = e.clientX;
+	      		var now_y = e.clientY;
+	      		var n =  nowTop-(y-now_y);
+	      		if(n < 0 ){
+	      			n=0;
+	      		}
+	      		if(n>img.height()-this.clientHeight){
+	      			n = img.height()-this.clientHeight;
+	      		}
+	      		var m = nowLeft - (x-now_x);
+	      		if(m < 0 ){
+	      			m=0;
+	      		}
+	      		if(m>img.width()-this.clientWidth){
+	      			m = img.width()-this.clientWidth;
+	      		}
+	       		
+	      		cut.css({top:n,left:m,backgroundPosition:-m+"px "+ -n+"px"});
+	      	})
+	      })
+	     })
+	    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="/css/reset.css">
+	<link rel="stylesheet" href="/css/header.css">
+	<style type="text/css"> 
+	  .show{
+	  	height:100px;
+	  	/*border:1px solid red;*/
+	  }
+	  .albums{
+
+	  }
+	  .show li{
+	  	float: left; 
+	  	width:25%;
+	  	height:100%;
+	  }
+
+	</style>
+</head>
+<body> 
+	    <section class="header clear">
+	    	<div class="container clear">
+	    		<div class="logo clear">
+	    			<img src="/images/title.png" alt="">
+	    		</div>
+	    		<nav>
+	    			<ul>
+	    				<li><a href="/all_albums">所有相册</a></li>
+	    				<li><a href="/my_albums">我的相册</a></li>
+	    				<li><a href="/albums_manage">管理相册</a></li>
+	    			</ul>
+	    		</nav>
+	    		<div class="right clear">
+	    			<% if(hasLogin){%>
+	    			<div class="head_pic">
+	    					<a href="/cut"><img src="<%=username%>/head_pic/head_pic.jpg" alt=""></a>
+	    			</div>
+	    			<div class="username">
+	    				<%=username%>
+	    			</div>
+	    			<div class="exit"> 
+	    				<a href="/exit">退出</a>
+	    			</div>
+	    		 <%}else{%>
+	    		   <div class="login"><a href="/login.html">登录</a></div>
+	    		   <div class="regist"><a href="regist.html">注册</a></div>
+	    		 <%}%>
+	    		</div>
+	    	</div>
+	    </section>
+<section class="body">
+	<div class="container">
+		<!-- 创建相册功能 -->
+		<div class="create">
+			<h2>创建相册</h2>
+			<span>请输入相册名称:</span>
+			<input type="text" id="create_name">
+			<button id="create">确定</button>
+		</div>
+		<!-- 删除相册 -->
+		<div class="delete">
+			<h2>删除相册</h2>
+				<ul class="albums clear">
+    			<% for(var i = 0;i<data.length;i++){%>
+    			<li>
+    			<span><%=data[i]%></span><input type="checkbox">删除
+    			</li>
+    			<%}%>
+				</ul>
+		<!-- 管理单个相册 -->
+		<div class="select">
+			<h2>选择单个相册</h2>
+			<select name="" id="select">
+				<% for(var i =0;i<data.length;i++){%>
+				<option value="<%=data[i]%>"><%=data[i]%></option>
+				<%}%>
+			</select>
+			<!-- 用来显示当前所选择的相册内的所有图片 --> 
+			<ul class="show"> 
+			</ul>
+		</div>
+		<!-- 文件上传 -->
+		<div class="upload">
+			<h2>文件上传</h2>
+			<form action="/uploads" method="post" enctype="multipart/form-data">
+				<select name="album_name" id="">
+					<% for(var i =0;i<data.length;i++){ %>
+							<option value="<%=data[i]%>"><%=data[i]%></option>
+						<%}%>
+				</select>
+			</br>
+				<input type="file" name="fileName"></br>
+				<input type="submit">
+			</form>
+		</div>
+		</div>                       
+	</div>
+</section>
+	    <section class="footer">
+	    	<div class="container"> 
+	    	</div>
+	    </section> 
+	    <script type="text/javascript" src="/js/jquery-1.7.2.js"></script>
+	    <script type="text/javascript">
+	    	// 获取元素
+	    	var $create = $("#create");
+	    	$create.click(function(){
+	    		// 获取用户输入的内容
+	    		var album_name = $("#create_name").val();
+	    		if(album_name===""){
+	    			return;
+	    		}
+	    		$.ajax({
+	    			type:"get",
+	    			data:{
+	    				album_name:album_name
+	    			},
+	    			url:"/create_album",
+	    			dataType:"json",
+	    			success:function(data){
+	    				// console.log(data)
+	    				if(!data.errno){
+	    					// 渲染新的模板
+	    					var li = "<li>"+album_name+"  <input type='checkbox'>删除		    			</li>";
+	    					$(".albums").append(li);
+	    					 $("#create_name").val("");
+	    				}
+	    			}
+	    		})
+	    	})
+	    	$(".albums").on("click","input",function(){
+	    	   var me = $(this);
+	    	  	console.log(me.prev().html())
+	    	   $.ajax({
+	    	   	"url":"/delete_album",
+	    	   	data:{"fileName":me.prev().html()},
+
+	    	   	dataType:"json",
+	    	   	type:"get",
+	    	   	success:function(data){
+	    	   		// console.log(data)
+	    	   		if(!data.errno){
+	    	   			// 将选中的那一行删除
+	    	   			me.parent().remove();
+	    	   		}
+	    	   	}
+	    	   })
+	    	})
+	    	// 选择相册事件
+	    	var select = $("#select");
+	    	select.change(function(){
+	        // 获得相册名称
+	        var val = $(this).val();
+	        // 发送ajax到后台获取该相册的图片
+	        $.ajax({
+	        	url:"/get_album_pics",
+	        	type:"get",
+	        	data:{
+	        		albumName:val
+	        	},
+	        	dataType:"json",
+	        	success:function(data){
+	        		// console.log(data);
+	        		// console.log(1)
+	        		if(!data.errno){
+	        			// console.log(2)
+	        			var ul = $(".show");
+	        			for(var i =0;i<data.data.length;i++){
+	        				// console.log(i);
+	        				var listr = "<li><a href='/delete_img? fileName="+data.data[i]+"'><img src='"+data.data[i]+"'/></a></li>";
+	        				// console.log(data.data);
+	        				// console.log(listr);
+	        				ul.append(listr);
+	        			}
+	        		}
+	        	}
+	        })
+	    	})
+
+	    </script>
+</body>
+</html>
